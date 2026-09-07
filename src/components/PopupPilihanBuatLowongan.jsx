@@ -1,3 +1,5 @@
+import { createPortal } from 'react-dom';
+
 const IconPanduan = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
@@ -13,7 +15,14 @@ const IconForm = () => (
 );
 
 export default function PopupPilihanBuatLowongan({ onClose, onPilihPanduan, onPilihForm }) {
-  return (
+  // Portal ke document.body — komponen ini dipanggil dari beberapa tempat
+  // (Navbar, Beranda_002, Lowongan_001), dan salah satunya (Navbar) render
+  // di dalam <header> yang punya backdrop-filter. backdrop-filter (sama
+  // seperti transform) membuat containing block baru untuk descendant
+  // position:fixed, jadi tanpa portal overlay ini malah "fixed" relatif ke
+  // header setinggi 58px itu, bukan ke viewport — bikin modalnya keliatan
+  // kepepet di pojok atas layar.
+  return createPortal(
     <div className="cm-overlay" onClick={onClose}>
       <div className="blp-modal" onClick={e => e.stopPropagation()}>
         <div className="blp-head">
@@ -35,6 +44,7 @@ export default function PopupPilihanBuatLowongan({ onClose, onPilihPanduan, onPi
         </div>
         <button className="blp-cancel" onClick={onClose}>Batal</button>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
