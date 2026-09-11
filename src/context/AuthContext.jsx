@@ -90,23 +90,31 @@ export function AuthProvider({ children }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
-      if (session?.user) {
-        localStorage.setItem('luna_admin_last_login', new Date().toISOString());
-        const cid = await fetchCompanyId(session.user.id);
-        if (cid) {
-          localStorage.setItem(`luna_admin_last_login_${cid}`, new Date().toISOString());
+      try {
+        if (session?.user) {
+          localStorage.setItem('luna_admin_last_login', new Date().toISOString());
+          const cid = await fetchCompanyId(session.user.id);
+          if (cid) {
+            localStorage.setItem(`luna_admin_last_login_${cid}`, new Date().toISOString());
+          }
+        } else {
+          setCompanyId(null);
+          setCompanyName(null);
+          setCompanyDetails({});
+          setCompanyPlan(null);
+          setUserRole(null);
+          setMustChangePassword(false);
+          setOtpVerified(true);
+          setOnboardingCompleted(true);
         }
-      } else {
-        setCompanyId(null);
-        setCompanyName(null);
-        setCompanyDetails({});
-        setCompanyPlan(null);
-        setUserRole(null);
-        setMustChangePassword(false);
-        setOtpVerified(true);
-        setOnboardingCompleted(true);
+      } catch (err) {
+        // Kalau fetchCompanyId gagal (query error, RLS, dsb), jangan biarkan
+        // loading nyangkut true selamanya — itu bikin App.jsx nge-spinner
+        // permanen tanpa ada cara keluar sama sekali selain refresh manual.
+        console.error('Gagal memuat data perusahaan setelah login:', err);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     });
 
     return () => subscription.unsubscribe();

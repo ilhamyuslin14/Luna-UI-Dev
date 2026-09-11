@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "./css/onboarding/onboarding_002.css";
 @source "./src/views/sandbox";
 
 :root {

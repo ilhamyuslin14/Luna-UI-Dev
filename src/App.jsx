@@ -64,6 +64,11 @@ import LandingPageOTPEmail_001 from './views/landing/LandingPage-OTP-Email_001.j
 import LandingPageVerifikasiMetode_001 from './views/landing/LandingPage-VerifikasiMetode_001.jsx';
 import LandingPageLupaPassword_001 from './views/landing/LandingPage-LupaPassword_001.jsx';
 import LandingPageTerimaUndangan from './views/landing/LandingPage-TerimaUndangan.jsx';
+import Docs from './views/docs/Docs.jsx';
+import LunaAnalytic from './views/analytic/LunaAnalytic.jsx';
+import Onboarding_002 from './views/onboarding_002/Onboarding_002.jsx';
+import GettingStartedLowongan from './mobile/views/getting-started-lowongan/GettingStartedLowongan.jsx';
+import GettingStartedProfil from './mobile/views/getting-started-profil/GettingStartedProfil.jsx';
 const sandboxModules = import.meta.glob('./views/sandbox/Sandbox.jsx');
 const loadSandbox = sandboxModules['./views/sandbox/Sandbox.jsx'];
 
@@ -221,8 +226,8 @@ export default function App() {
   useEffect(() => {
     if (loading) return;
 
-    const publicMenus = ['landingpage', 'landingpage_001', 'landingpage_002', 'landingpage_003', 'landingpage-masuk', 'landingpage-daftar', 'landingpage-otp', 'landingpage-lupa-password', 'landingpage-masuk_001', 'landingpage-daftar_001', 'landingpage-otp_001', 'landingpage-lupa-password_001', 'laman-karir', 'laman-perusahaan', 'semua-lowongan', 'sandbox'];
-    const authMenus = ['landingpage-masuk', 'landingpage-daftar', 'landingpage-lupa-password', 'landingpage-masuk_001', 'landingpage-daftar_001', 'landingpage-lupa-password_001'];
+    const publicMenus = ['landingpage', 'landingpage_001', 'landingpage_002', 'landingpage_003', 'landingpage-masuk', 'landingpage-daftar', 'landingpage-otp', 'landingpage-lupa-password', 'landingpage-masuk_001', 'landingpage-daftar_001', 'landingpage-otp_001', 'landingpage-lupa-password_001', 'laman-karir', 'laman-perusahaan', 'semua-lowongan', 'sandbox', 'docs'];
+    const authMenus = ['landingpage', 'landingpage_001', 'landingpage_002', 'landingpage_003', 'landingpage-masuk', 'landingpage-daftar', 'landingpage-otp', 'landingpage-lupa-password', 'landingpage-masuk_001', 'landingpage-daftar_001', 'landingpage-otp_001', 'landingpage-lupa-password_001'];
 
     if (!user && !publicMenus.includes(activeMenu)) {
       // Not logged in -> redirect to landing page
@@ -374,12 +379,37 @@ export default function App() {
       case 'buat-lowongan-panduan_001': return <LowonganBuatPanduan_001 navigate={navigate} back={back} />;
       case 'sebar':
       case 'sebar_001': return <Sebar_001 navigate={navigate} />;
+      case 'analytic':
+      case 'analytics':
+      case 'luna-analytic': return <LunaAnalytic navigate={navigate} />;
+      case 'onboarding-2':
+      case 'onboarding_002': return <Onboarding_002 navigate={navigate} />;
       default: return <Beranda_002 navigate={navigate} />;
     }
   };
 
-  if (location.pathname === '/sandbox') {
+  if (location.pathname === '/analytic' || location.pathname === '/analytics' || location.pathname === '/luna-analytic' || activeMenu === 'luna-analytic' || activeMenu === 'analytic') {
+    return <LunaAnalytic navigate={navigate} />;
+  }
+
+  if (location.pathname === '/docs' || location.pathname.startsWith('/docs') || activeMenu === 'docs') {
+    return <Docs navigate={navigate} />;
+  }
+
+  if (location.pathname === '/sandbox' || activeMenu === 'sandbox') {
     return <SandboxWrapper navigate={navigate} />;
+  }
+
+  if (location.pathname === '/getting-started-lowongan' || activeMenu === 'getting-started-lowongan') {
+    return <GettingStartedLowongan />;
+  }
+
+  if (location.pathname === '/getting-started-profil' || activeMenu === 'getting-started-profil') {
+    return <GettingStartedProfil />;
+  }
+
+  if (location.pathname === '/onboarding-2' || location.pathname === '/onboarding_002' || activeMenu === 'onboarding_002' || activeMenu === 'onboarding-2') {
+    return <Onboarding_002 navigate={navigate} />;
   }
 
   if (isMobile) {
