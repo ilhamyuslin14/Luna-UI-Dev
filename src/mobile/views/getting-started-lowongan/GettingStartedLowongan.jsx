@@ -1,17 +1,22 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import '../../../../css/mobile/getting-started-lowongan.css';
 
 /*
-  Prototipe klik-tembus "Getting Started" (jalur Membuka Lowongan Baru saja).
-  SEMUA data & aksi di sini dummy/statis — tidak ada panggilan Supabase, tidak
-  ada koneksi ke komponen buat-lowongan/onboarding asli. Tujuannya murni untuk
-  didemokan & direview alurnya, dari Selamat Datang sampai Sebarkan, Selesai,
-  dan preview Beranda.
+  Prototipe klik-tembus "Getting Started" — dua cabang dari layar Situasi
+  Kamu: "Membuka Lowongan Baru" (AI/Form → Sebarkan) dan "Rekrutmen Sedang
+  Berjalan" (Form → Menyusun Kriteria → Unggah CV → Hasil Penilaian). SEMUA
+  data & aksi di sini dummy/statis — tidak ada panggilan Supabase, tidak ada
+  koneksi ke komponen buat-lowongan/unggah-CV asli. Kedua cabang berujung ke
+  layar Selesai (completeness meter) yang sama, lalu preview Beranda.
 
-  Cabang "Rekrutmen Sedang Berjalan" dan section "Profil Perusahaan" sengaja
-  TIDAK dibuat di sini — menyusul di iterasi terpisah.
+  Section "Profil Perusahaan" ada di route terpisah, lihat
+  ../getting-started-profil/GettingStartedProfil.jsx.
 */
 
+// Linear untuk bagian sebelum cabang metode (dipakai goBack generik).
+// Setelah 'metode', jalur bercabang (wizard AI vs form) lalu ketemu lagi di
+// 'draft' — dua step itu dikasih onBack eksplisit sendiri, tidak lewat array
+// ini (lihat komentar di goBack).
 const STEP_ORDER = ['welcome', 'skenario', 'kenalan', 'metode', 'wizard1', 'wizard2', 'sebarkan', 'selesai', 'beranda'];
 
 const STEP_META = {
@@ -20,7 +25,17 @@ const STEP_META = {
   metode: { label: 'Mulai Buat Lowongan', progress: 3 },
   wizard1: { progress: 4 },
   wizard2: { progress: 4 },
+  formfields: { label: 'Isi Data Lowongan', progress: 4 },
+  draft: { label: 'Review & Terbitkan', progress: 4 },
   sebarkan: { label: 'Sebarkan Lowongannya', progress: 5 },
+  // Cabang "Rekrutmen Sedang Berjalan" (ATS) — dipilih di ScreenSkenario
+  kenalanAts: { label: 'Kenalan LUNA sebagai ATS', progress: 2 },
+  formAts: { label: 'Isi Data Lowongan', progress: 3 },
+  menyusunKriteria: { label: 'Menyusun Kriteria', progress: 4 },
+  unggahKosong: { label: 'Unggah CV Kandidat', progress: 4 },
+  unggahProses: { label: 'Unggah CV Kandidat', progress: 4 },
+  unggahSelesai: { label: 'Unggah CV Kandidat', progress: 5 },
+  hasilPenilaian: { label: 'Hasil Penilaian', progress: 5 },
 };
 const TOTAL_STEPS = 5;
 
@@ -51,6 +66,9 @@ const IconBolt = () => (
 const IconChevronDown = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
 );
+const IconUpload = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
+);
 const IconWhatsapp = () => (
   <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.1-1.6-.8-1.9-.9-.2-.1-.4-.1-.6.1-.2.3-.7.9-.8 1-.2.2-.3.2-.5.1-.3-.1-1.1-.4-2.1-1.3-.8-.7-1.3-1.6-1.5-1.9-.1-.3 0-.4.1-.5l.4-.5c.1-.1.2-.3.2-.4.1-.1 0-.3 0-.4-.1-.1-.6-1.4-.8-1.9-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.4.1-.6.3-.2.3-.8.8-.8 1.9 0 1.1.8 2.2.9 2.4.1.1 1.6 2.5 3.9 3.5.5.2 1 .4 1.3.5.5.2 1 .1 1.4.1.4-.1 1.3-.5 1.5-1 .2-.5.2-.9.1-1l-.1-.2Z" /><path d="M12 2a10 10 0 0 0-8.5 15.2L2 22l4.9-1.3A10 10 0 1 0 12 2Z" fill="none" stroke="currentColor" strokeWidth="1.5" /></svg>
 );
@@ -69,6 +87,18 @@ const IconHome = () => (
 const IconBriefcase = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="7" width="20" height="14" rx="2" /><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" /></svg>
 );
+const IconAlert = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
+);
+const IconRetry = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 4v6h-6" /><path d="M1 20v-6h6" /><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" /></svg>
+);
+const IconSpinner = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M21 12a9 9 0 1 1-6.22-8.56" /></svg>
+);
+const IconWaiting = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+);
 
 const DUMMY_COMPANY = 'Kreativa Studio';
 const DUMMY_NAME = 'Dinda';
@@ -76,6 +106,8 @@ const DUMMY_JOB = 'Content Writer';
 
 export default function GettingStartedLowongan() {
   const [step, setStep] = useState('welcome');
+  const [method, setMethod] = useState('ai'); // 'ai' | 'form' — dipilih di ScreenMetode, dipakai buat tahu 'draft' & 'sebarkan' harus kembali ke mana
+  const [scenario, setScenario] = useState('baru'); // 'baru' | 'lama' — dipilih di ScreenSkenario, menentukan seluruh cabang berikutnya
 
   const meta = STEP_META[step];
   const showTop = step !== 'welcome' && step !== 'selesai' && step !== 'beranda';
@@ -83,6 +115,19 @@ export default function GettingStartedLowongan() {
   const goBack = () => {
     if (idx > 0) setStep(STEP_ORDER[idx - 1]);
   };
+
+  const chooseSkenario = (chosen) => {
+    setScenario(chosen);
+    setStep(chosen === 'lama' ? 'kenalanAts' : 'kenalan');
+  };
+  const chooseMetode = (chosen) => {
+    setMethod(chosen);
+    setStep(chosen === 'form' ? 'formfields' : 'wizard1');
+  };
+  // 'draft' ketemu dari dua jalur berbeda (wizard AI atau form manual) — jadi
+  // tombol kembalinya tidak bisa pakai goBack generik (STEP_ORDER linear),
+  // harus tahu jalur mana yang tadi dipilih.
+  const backFromDraft = () => setStep(method === 'form' ? 'formfields' : 'wizard2');
 
   return (
     <div className="msh-fullscreen-panel open gsl-panel">
@@ -99,13 +144,25 @@ export default function GettingStartedLowongan() {
         )}
 
         {step === 'welcome' && <ScreenWelcome onNext={() => setStep('skenario')} />}
-        {step === 'skenario' && <ScreenSkenario onNext={() => setStep('kenalan')} />}
-        {step === 'kenalan' && <ScreenKenalan onNext={() => setStep('metode')} onBack={goBack} />}
-        {step === 'metode' && <ScreenMetode onNext={() => setStep('wizard1')} onBack={goBack} />}
+        {step === 'skenario' && <ScreenSkenario onNext={chooseSkenario} />}
+        {step === 'kenalan' && <ScreenKenalan onNext={() => setStep('metode')} onBack={() => setStep('skenario')} />}
+        {step === 'metode' && <ScreenMetode onNext={chooseMetode} onBack={goBack} />}
         {step === 'wizard1' && <ScreenWizard1 onNext={() => setStep('wizard2')} onBack={goBack} />}
-        {step === 'wizard2' && <ScreenWizard2 onNext={() => setStep('sebarkan')} onBack={goBack} />}
-        {step === 'sebarkan' && <ScreenSebarkan onNext={() => setStep('selesai')} onBack={goBack} />}
-        {step === 'selesai' && <ScreenSelesai onNext={() => setStep('beranda')} />}
+        {step === 'wizard2' && <ScreenWizard2 onNext={() => setStep('draft')} onBack={goBack} />}
+        {step === 'formfields' && <ScreenFormFields onNext={() => setStep('draft')} onBack={() => setStep('metode')} />}
+        {step === 'draft' && <ScreenDraft onNext={() => setStep('sebarkan')} onBack={backFromDraft} />}
+        {step === 'sebarkan' && <ScreenSebarkan onNext={() => setStep('selesai')} onBack={() => setStep('draft')} />}
+
+        {/* Cabang "Rekrutmen Sedang Berjalan" (ATS) */}
+        {step === 'kenalanAts' && <ScreenKenalanAts onNext={() => setStep('formAts')} onBack={() => setStep('skenario')} />}
+        {step === 'formAts' && <ScreenFormAts onNext={() => setStep('menyusunKriteria')} onBack={() => setStep('kenalanAts')} />}
+        {step === 'menyusunKriteria' && <ScreenMenyusunKriteria onNext={() => setStep('unggahKosong')} />}
+        {step === 'unggahKosong' && <ScreenUnggahKosong onNext={() => setStep('unggahProses')} onBack={() => setStep('formAts')} />}
+        {step === 'unggahProses' && <ScreenUnggahProses onNext={() => setStep('unggahSelesai')} />}
+        {step === 'unggahSelesai' && <ScreenUnggahSelesai onNext={() => setStep('hasilPenilaian')} />}
+        {step === 'hasilPenilaian' && <ScreenHasilPenilaian onNext={() => setStep('selesai')} />}
+
+        {step === 'selesai' && <ScreenSelesai scenario={scenario} onNext={() => setStep('beranda')} />}
         {step === 'beranda' && <ScreenBerandaDummy />}
       </div>
     </div>
@@ -153,7 +210,7 @@ function ScreenWelcome({ onNext }) {
 
 /* ── 2. Situasi Kamu ── */
 function ScreenSkenario({ onNext }) {
-  const [pilihan, setPilihan] = useState('baru'); // 'baru' | 'lama' — cuma visual, jalur 'lama' belum dibuat di prototipe ini
+  const [pilihan, setPilihan] = useState('baru'); // 'baru' | 'lama' — menentukan jalur berikutnya, dikirim lewat onNext(pilihan)
 
   return (
     <>
@@ -198,7 +255,307 @@ function ScreenSkenario({ onNext }) {
         </button>
       </div>
       <div className="gsl-footer">
-        <button className="gsl-btn gsl-btn-primary" onClick={onNext}>Lanjutkan ke Langkah Berikutnya →</button>
+        <button className="gsl-btn gsl-btn-primary" onClick={() => onNext(pilihan)}>Lanjutkan ke Langkah Berikutnya →</button>
+      </div>
+    </>
+  );
+}
+
+/* ══════════════ Cabang "Rekrutmen Sedang Berjalan" (ATS) ══════════════ */
+
+/* ── Kenalan LUNA sebagai ATS (value prop) ── */
+function ScreenKenalanAts({ onNext, onBack }) {
+  return (
+    <>
+      <div className="gsl-body gsl-lp">
+        <span className="gsl-lp-kicker">LUNA sebagai ATS</span>
+        <h2 className="gsl-h2">CV yang sudah masuk, dibaca &amp; dinilai otomatis</h2>
+        <p className="gsl-p">Kandidat yang sudah melamar di luar sistem bisa langsung kamu masukkan — Luna yang membaca &amp; menilainya.</p>
+
+        <div>
+          <div className="gsl-lp-feat">
+            <div className="gsl-lp-feat-ic"><IconFile /></div>
+            <div><div className="gsl-lp-feat-t">CV dibaca otomatis</div><div className="gsl-lp-feat-d">Diekstrak jadi data terstruktur — nama, pengalaman, skill.</div></div>
+          </div>
+          <div className="gsl-lp-feat">
+            <div className="gsl-lp-feat-ic"><IconSparkle /></div>
+            <div><div className="gsl-lp-feat-t">Dinilai &amp; diurutkan AI</div><div className="gsl-lp-feat-d">Skor kecocokan berbasis bukti nyata dari isi CV.</div></div>
+          </div>
+        </div>
+
+        <div className="gsl-proof">
+          <div className="gsl-proof-row"><div className="gsl-proof-avatar">DK</div><div className="gsl-proof-name">Dinda Kusuma</div><div className="gsl-proof-score">92%</div></div>
+          <div className="gsl-proof-row"><div className="gsl-proof-avatar">FR</div><div className="gsl-proof-name">Fajar Ramadhan</div><div className="gsl-proof-score">78%</div></div>
+        </div>
+      </div>
+      <div className="gsl-footer">
+        <button className="gsl-btn gsl-btn-primary" onClick={onNext}>Lanjutkan</button>
+        <button className="gsl-back-link" onClick={onBack}><IconBack />Kembali</button>
+      </div>
+    </>
+  );
+}
+
+/* ── Buat Lowongan (Form, khusus posisi yang sudah berjalan) ── */
+function ScreenFormAts({ onNext, onBack }) {
+  const [jabatan, setJabatan] = useState(DUMMY_JOB);
+  const [lokasi, setLokasi] = useState('Jakarta Selatan');
+  const [deskripsi, setDeskripsi] = useState('Kami mencari Content Writer yang bisa menulis copy tajam untuk kampanye digital, mengelola kalender konten, dan berkolaborasi dengan tim desain…');
+
+  return (
+    <>
+      <div className="gsl-body">
+        <div>
+          <h2 className="gsl-h2">Isi data lowongan yang sudah berjalan</h2>
+          <p className="gsl-p" style={{ marginTop: 6 }}>Sudah punya file JD? Unggah dulu — sisanya kami isikan otomatis.</p>
+        </div>
+
+        <div className="gsl-upload-box">
+          <div className="gsl-upload-ic"><IconUpload /></div>
+          <div><div className="gsl-upload-t">JD_Content_Writer.pdf</div><div className="gsl-upload-d">Terunggah — field di bawah terisi otomatis</div></div>
+          <span className="gsl-upload-cta" style={{ color: '#1f8a4e' }}>✓</span>
+        </div>
+        <div className="gsl-or-divider">atau lengkapi manual</div>
+
+        <div className="gsl-sec-label">Detail Posisi</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div className="gsl-field">
+            <label>Nama Jabatan <span className="opt">*</span></label>
+            <input className="gsl-input" value={jabatan} onChange={e => setJabatan(e.target.value)} />
+          </div>
+          <div className="gsl-field">
+            <label>Level Jabatan</label>
+            <button type="button" className="gsl-input"><span>Staff</span><IconChevronDown /></button>
+          </div>
+          <div className="gsl-field">
+            <label>Departemen</label>
+            <button type="button" className="gsl-input"><span>Content</span><IconChevronDown /></button>
+          </div>
+          <div className="gsl-field">
+            <label>Lokasi</label>
+            <input className="gsl-input" value={lokasi} onChange={e => setLokasi(e.target.value)} />
+          </div>
+          <div className="gsl-field">
+            <label>Ikatan Kerja</label>
+            <button type="button" className="gsl-input"><span>Penuh Waktu</span><IconChevronDown /></button>
+          </div>
+          <div className="gsl-field">
+            <label>Jumlah Rekrut</label>
+            <input className="gsl-input" defaultValue="1" />
+          </div>
+        </div>
+
+        <div className="gsl-sec-label">Kompensasi &amp; Jadwal</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div className="gsl-field">
+            <label>Status Rekrutmen <span className="opt">*</span></label>
+            <button type="button" className="gsl-input"><span>Terbuka</span><IconChevronDown /></button>
+          </div>
+          <div className="gsl-row2">
+            <div className="gsl-field"><label>Upah Min</label><input className="gsl-input" defaultValue="Rp 6.000.000" /></div>
+            <div className="gsl-field"><label>Upah Maks</label><input className="gsl-input" defaultValue="Rp 9.000.000" /></div>
+          </div>
+          <div className="gsl-field">
+            <label>Siklus Upah</label>
+            <button type="button" className="gsl-input"><span>Bulanan</span><IconChevronDown /></button>
+          </div>
+          <div className="gsl-row2">
+            <div className="gsl-field"><label>Tgl Mulai</label><input className="gsl-input" defaultValue="1 Okt 2026" /></div>
+            <div className="gsl-field"><label>Target Onboard</label><input className="gsl-input" defaultValue="15 Okt 2026" /></div>
+          </div>
+          <div className="gsl-field">
+            <label>Minimal Pendidikan</label>
+            <button type="button" className="gsl-input"><span>S1</span><IconChevronDown /></button>
+          </div>
+          <div className="gsl-field">
+            <label>Minimal Pengalaman (Tahun)</label>
+            <input className="gsl-input" defaultValue="1" />
+          </div>
+        </div>
+
+        <div className="gsl-sec-label">Deskripsi Pekerjaan</div>
+        <div className="gsl-field">
+          <label>Deskripsi <span className="opt">*</span></label>
+          <textarea
+            className="gsl-txa"
+            placeholder="Jelaskan tanggung jawab & kualifikasi posisi ini…"
+            value={deskripsi}
+            onChange={e => setDeskripsi(e.target.value)}
+          />
+          <div className="gsl-char-hint"><span>Minimal 300 karakter untuk kriteria otomatis</span><b>{deskripsi.length}/300</b></div>
+        </div>
+        <div className="gsl-progress-track"><div className="gsl-progress-fill" style={{ width: `${Math.min(100, (deskripsi.length / 300) * 100)}%` }} /></div>
+        <div className="gsl-ai-hint">
+          <IconSparkle />
+          <p><b>Kriteria penilaian</b> akan otomatis disusun dari deskripsi ini begitu lowongan diterbitkan — tidak perlu diisi manual.</p>
+        </div>
+      </div>
+      <div className="gsl-footer">
+        <button className="gsl-btn gsl-btn-primary" onClick={onNext}>Lanjut ke Unggah CV</button>
+        <button className="gsl-back-link" onClick={onBack}><IconBack />Kembali</button>
+      </div>
+    </>
+  );
+}
+
+/* ── Menyusun Kriteria (loading) ── */
+function ScreenMenyusunKriteria({ onNext }) {
+  // Dummy: 1 = "Menyusun kriteria" aktif, 2 = "Siap menerima & menilai CV" aktif/selesai,
+  // lalu otomatis lanjut ke layar berikutnya. Total ~6 detik, tanpa CTA — murni loading.
+  const [phase, setPhase] = useState(1);
+
+  useEffect(() => {
+    const t1 = setTimeout(() => setPhase(2), 3500);
+    const t2 = setTimeout(() => onNext(), 6000);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, [onNext]);
+
+  return (
+    <div className="gsl-loading-wrap">
+      <div className="gsl-loading-badge"><IconSparkle /></div>
+      <div>
+        <h2 className="gsl-h2">Menyusun kriteria penilaian…</h2>
+        <p className="gsl-p" style={{ marginTop: 6 }}>Luna sedang membaca deskripsi pekerjaan buat menyusun kriteria penilaian otomatis.</p>
+      </div>
+      <div className="gsl-proc-steps">
+        <div className="gsl-proc-step"><div className="gsl-proc-dot done"><IconCheck /></div><div className="gsl-proc-t done">Lowongan diterbitkan</div></div>
+        <div className="gsl-proc-step">
+          <div className={`gsl-proc-dot ${phase >= 2 ? 'done' : 'active'}`}>{phase >= 2 ? <IconCheck /> : null}</div>
+          <div className={`gsl-proc-t ${phase >= 2 ? 'done' : 'active'}`}>Menyusun kriteria penilaian</div>
+        </div>
+        <div className="gsl-proc-step">
+          <div className={`gsl-proc-dot ${phase >= 2 ? 'active' : 'pending'}`} />
+          <div className={`gsl-proc-t ${phase >= 2 ? 'active' : ''}`}>Siap menerima &amp; menilai CV</div>
+        </div>
+      </div>
+      <div className="gsl-proc-note">Biasanya selesai dalam 15–30 detik — lanjut otomatis begitu siap</div>
+    </div>
+  );
+}
+
+/* ── Unggah CV — kosong ── */
+function ScreenUnggahKosong({ onNext, onBack }) {
+  return (
+    <>
+      <div className="gsl-body">
+        <div>
+          <h2 className="gsl-h2">Unggah CV kandidat yang sudah melamar</h2>
+          <p className="gsl-p" style={{ marginTop: 6 }}>Luna langsung menilai kecocokan tiap CV dengan lowongan ini — bisa sekaligus banyak file.</p>
+        </div>
+        <div className="gsl-dropzone">
+          <div className="gsl-dropzone-ic"><IconUpload /></div>
+          <div className="gsl-dropzone-t">Ketuk untuk pilih file CV</div>
+          <div className="gsl-dropzone-d">Bisa pilih beberapa file sekaligus</div>
+        </div>
+        <div className="gsl-meta-row"><span>PDF, DOC, DOCX, TXT</span><span className="gsl-meta-dot" /><span>Maks. 10 MB/file</span></div>
+      </div>
+      <div className="gsl-footer">
+        <button className="gsl-btn gsl-btn-primary" onClick={onNext}>Pilih File</button>
+        <button className="gsl-back-link" onClick={onBack}><IconBack />Kembali</button>
+      </div>
+    </>
+  );
+}
+
+/* ── Unggah CV — sedang berjalan ── */
+function ScreenUnggahProses({ onNext }) {
+  return (
+    <>
+      <div className="gsl-body">
+        <div className="gsl-up-top">
+          <div className="gsl-up-status">Mengunggah…<span className="muted">1/3 file</span></div>
+          <div className="gsl-up-count">38%</div>
+        </div>
+        <div className="gsl-progress-track"><div className="gsl-progress-fill" style={{ width: '38%' }} /></div>
+
+        <div className="gsl-up-section-label">Berlangsung</div>
+        <div>
+          <div className="gsl-up-row">
+            <div className="gsl-cv-ic">PDF</div><div className="gsl-cv-name">Fajar_Ramadhan_CV.pdf</div>
+            <div className="gsl-up-row-right">
+              <div className="gsl-file-progress-track"><div className="gsl-file-progress-fill" style={{ width: '55%' }} /></div>
+              <span className="gsl-status-label uploading"><IconSpinner />Menilai</span>
+            </div>
+          </div>
+          <div className="gsl-up-row">
+            <div className="gsl-cv-ic">PDF</div><div className="gsl-cv-name">Salsa_Amelia_CV.pdf</div>
+            <div className="gsl-up-row-right"><span className="gsl-status-label menunggu"><IconWaiting />Menunggu</span></div>
+          </div>
+        </div>
+
+        <div className="gsl-up-section-label" style={{ marginTop: 16 }}>Selesai</div>
+        <div>
+          <div className="gsl-up-row">
+            <div className="gsl-cv-ic">PDF</div><div className="gsl-cv-name">Dinda_Kusuma_CV.pdf</div>
+            <div className="gsl-up-row-right"><span className="gsl-detail-badge">Detail</span><span className="gsl-status-label berhasil"><IconCheck />Skor 92%</span></div>
+          </div>
+        </div>
+      </div>
+      <div className="gsl-footer">
+        <button className="gsl-btn gsl-btn-primary" onClick={onNext}>Lanjutkan</button>
+      </div>
+    </>
+  );
+}
+
+/* ── Unggah CV — selesai (dengan contoh error + retry) ── */
+function ScreenUnggahSelesai({ onNext }) {
+  return (
+    <>
+      <div className="gsl-body">
+        <div className="gsl-up-top">
+          <div className="gsl-up-status">Selesai<span className="muted">2 Berhasil, 1 Gagal</span></div>
+          <div className="gsl-up-count">100%</div>
+        </div>
+        <div className="gsl-progress-track"><div className="gsl-progress-fill" style={{ width: '100%' }} /></div>
+
+        <div className="gsl-up-section-label">Selesai</div>
+        <div>
+          <div className="gsl-up-row">
+            <div className="gsl-cv-ic">PDF</div><div className="gsl-cv-name">Dinda_Kusuma_CV.pdf</div>
+            <div className="gsl-up-row-right"><span className="gsl-detail-badge">Detail</span><span className="gsl-status-label berhasil"><IconCheck />Skor 92%</span></div>
+          </div>
+          <div className="gsl-up-row">
+            <div className="gsl-cv-ic">PDF</div><div className="gsl-cv-name">Fajar_Ramadhan_CV.pdf</div>
+            <div className="gsl-up-row-right"><span className="gsl-detail-badge">Detail</span><span className="gsl-status-label berhasil"><IconCheck />Skor 78%</span></div>
+          </div>
+        </div>
+
+        <div className="gsl-gagal-section">
+          <div className="gsl-gagal-title"><IconAlert />Terdapat Error</div>
+          <div className="gsl-gagal-item">
+            <div className="gsl-gagal-row">
+              <div className="gsl-gagal-name"><span className="gsl-gagal-file">Salsa_Amelia_CV.pdf</span><span className="gsl-gagal-chip">Gagal dibaca</span></div>
+              <button className="gsl-retry-btn"><IconRetry /></button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="gsl-footer">
+        <button className="gsl-btn gsl-btn-primary" onClick={onNext}>Lanjutkan</button>
+      </div>
+    </>
+  );
+}
+
+/* ── Hasil Penilaian ── */
+function ScreenHasilPenilaian({ onNext }) {
+  return (
+    <>
+      <div className="gsl-body" style={{ paddingTop: 20 }}>
+        <div style={{ textAlign: 'center' }}>
+          <div className="gsl-success-ring" style={{ margin: '0 auto' }}><IconCheck /></div>
+          <h2 className="gsl-h2" style={{ marginTop: 14 }}>3 kandidat sudah dinilai</h2>
+          <p className="gsl-p" style={{ marginTop: 6 }}>Diurutkan dari kecocokan tertinggi — lihat detail lengkapnya di halaman Kandidat.</p>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div className="gsl-score-card"><div className="gsl-score-avatar">DK</div><div><div className="gsl-score-name">Dinda Kusuma</div><div className="gsl-score-role">{DUMMY_JOB}</div></div><div className="gsl-score-val">92%</div></div>
+          <div className="gsl-score-card"><div className="gsl-score-avatar">FR</div><div><div className="gsl-score-name">Fajar Ramadhan</div><div className="gsl-score-role">{DUMMY_JOB}</div></div><div className="gsl-score-val">78%</div></div>
+          <div className="gsl-score-card"><div className="gsl-score-avatar">SA</div><div><div className="gsl-score-name">Salsa Amelia</div><div className="gsl-score-role">{DUMMY_JOB}</div></div><div className="gsl-score-val">65%</div></div>
+        </div>
+      </div>
+      <div className="gsl-footer">
+        <button className="gsl-btn gsl-btn-primary" onClick={onNext}>Lanjutkan</button>
       </div>
     </>
   );
@@ -238,7 +595,7 @@ function ScreenKenalan({ onNext, onBack }) {
 
 /* ── 4. Cara Bikinnya ── */
 function ScreenMetode({ onNext, onBack }) {
-  const [pilihan, setPilihan] = useState('ai'); // 'ai' | 'form' — cuma visual, jalur 'form' belum dibuat di prototipe ini
+  const [pilihan, setPilihan] = useState('ai'); // 'ai' | 'form' — menentukan jalur berikutnya, dikirim lewat onNext(pilihan)
 
   return (
     <>
@@ -269,7 +626,7 @@ function ScreenMetode({ onNext, onBack }) {
             <div className="gsl-choice-ico"><IconFile /></div>
             <div>
               <span className={`gsl-choice-badge${pilihan === 'form' ? ' on' : ' off'}`}>Isi Form Data</span>
-              <div className="gsl-choice-t">Dengan Form Sendiri</div>
+              <div className="gsl-choice-t">Isi Form Sendiri</div>
             </div>
           </div>
           <div className="gsl-choice-d">Sudah tahu persis detail posisinya, atau sudah punya draf Deskripsi Pekerjaan sendiri.</div>
@@ -281,7 +638,7 @@ function ScreenMetode({ onNext, onBack }) {
         </button>
       </div>
       <div className="gsl-footer">
-        <button className="gsl-btn gsl-btn-primary" onClick={onNext}>Lanjutkan</button>
+        <button className="gsl-btn gsl-btn-primary" onClick={() => onNext(pilihan)}>Lanjutkan</button>
         <button className="gsl-back-link" onClick={onBack}><IconBack />Kembali</button>
       </div>
     </>
@@ -337,6 +694,112 @@ function ScreenWizard2({ onNext, onBack }) {
   );
 }
 
+/* ── 5c. Isi Form Sendiri — versi ringkas dari MobileBuatLowonganForm.jsx
+   asli (unggah JD, "atau isi manual", field Detail Posisi). Statis/dummy,
+   cuma Nama Jabatan & Lokasi yang benar-benar bisa diketik. ── */
+function ScreenFormFields({ onNext, onBack }) {
+  const [jabatan, setJabatan] = useState(DUMMY_JOB);
+  const [lokasi, setLokasi] = useState('Jakarta Selatan');
+  const [deskripsi, setDeskripsi] = useState('');
+
+  return (
+    <>
+      <div className="gsl-body">
+        <div className="gsl-upload-box">
+          <div className="gsl-upload-ic"><IconUpload /></div>
+          <div>
+            <div className="gsl-upload-t">Sudah punya draf JD?</div>
+            <div className="gsl-upload-d">Unggah .pdf/.docx, form di bawah terisi otomatis</div>
+          </div>
+          <span className="gsl-upload-cta">Unggah</span>
+        </div>
+        <div className="gsl-or-divider">atau isi manual</div>
+
+        <div className="gsl-sec-label">Detail Posisi</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div className="gsl-field">
+            <label>Nama Jabatan <span className="opt">*</span></label>
+            <input className="gsl-input" value={jabatan} onChange={e => setJabatan(e.target.value)} />
+          </div>
+          <div className="gsl-field">
+            <label>Level Jabatan</label>
+            <button type="button" className="gsl-input"><span className="ph">Pilih level jabatan</span><IconChevronDown /></button>
+          </div>
+          <div className="gsl-field">
+            <label>Departemen</label>
+            <button type="button" className="gsl-input"><span className="ph">Pilih departemen</span><IconChevronDown /></button>
+          </div>
+          <div className="gsl-field">
+            <label>Lokasi</label>
+            <input className="gsl-input" value={lokasi} onChange={e => setLokasi(e.target.value)} />
+          </div>
+          <div className="gsl-field">
+            <label>Ikatan Kerja</label>
+            <button type="button" className="gsl-input"><span className="ph">Pilih ikatan kerja</span><IconChevronDown /></button>
+          </div>
+        </div>
+
+        <div className="gsl-sec-label">Deskripsi Pekerjaan</div>
+        <div className="gsl-field">
+          <label>Deskripsi <span className="opt">*</span></label>
+          <textarea
+            className="gsl-txa"
+            placeholder="Jelaskan tanggung jawab & kualifikasi posisi ini…"
+            value={deskripsi}
+            onChange={e => setDeskripsi(e.target.value)}
+          />
+          <div className="gsl-char-hint"><span>Minimal 300 karakter untuk kriteria otomatis</span><b>{deskripsi.length}/300</b></div>
+        </div>
+      </div>
+      <div className="gsl-footer">
+        <button className="gsl-btn gsl-btn-primary" onClick={onNext}>Lanjut ke Review</button>
+        <button className="gsl-back-link" onClick={onBack}><IconBack />Kembali</button>
+      </div>
+    </>
+  );
+}
+
+/* ── 5d. Draft & Review — dipakai jalur AI maupun Form, mirip fase 'review'
+   di MobileBuatLowonganForm.jsx & step 'summary' di MobileBuatLowonganQA.jsx
+   asli. ── */
+function ScreenDraft({ onNext, onBack }) {
+  return (
+    <>
+      <div className="gsl-body">
+        <div>
+          <h2 className="gsl-h2">Draf lowonganmu sudah siap</h2>
+          <p className="gsl-p" style={{ marginTop: 6 }}>Cek sekali lagi sebelum diterbitkan — masih bisa diedit kapan saja nanti.</p>
+        </div>
+
+        <div className="gsl-draft-card">
+          <div className="gsl-draft-job">{DUMMY_JOB}</div>
+          <div className="gsl-draft-badges">
+            <span className="gsl-draft-badge">Staff</span>
+            <span className="gsl-draft-badge">Content</span>
+            <span className="gsl-draft-badge">Jakarta Selatan</span>
+            <span className="gsl-draft-badge">Penuh Waktu</span>
+          </div>
+          <div className="gsl-draft-divider" />
+          <div className="gsl-draft-row"><span>Jumlah Rekrut</span><span>1 orang</span></div>
+          <div className="gsl-draft-row"><span>Pengalaman Min.</span><span>1–2 Tahun</span></div>
+          <div className="gsl-draft-row"><span>Pendidikan Min.</span><span>S1</span></div>
+          <div className="gsl-draft-desc-label">Deskripsi</div>
+          <div className="gsl-draft-desc">Kami mencari Content Writer yang bisa menulis copy tajam untuk kampanye digital, mengelola kalender konten, dan berkolaborasi dengan tim desain…</div>
+        </div>
+
+        <div className="gsl-ai-hint">
+          <IconSparkle />
+          <p>Begitu diterbitkan, <b>kriteria penilaian AI</b> disusun otomatis di latar belakang — bisa dipantau &amp; diedit di halaman detail lowongan.</p>
+        </div>
+      </div>
+      <div className="gsl-footer">
+        <button className="gsl-btn gsl-btn-primary" onClick={onNext}>Terbitkan Lowongan</button>
+        <button className="gsl-back-link" onClick={onBack}><IconBack />Kembali</button>
+      </div>
+    </>
+  );
+}
+
 /* ── 6. Sebarkan Lowongannya ── */
 function ScreenSebarkan({ onNext, onBack }) {
   return (
@@ -378,10 +841,11 @@ function ScreenSebarkan({ onNext, onBack }) {
 }
 
 /* ── 7. Selesai ── */
-function ScreenSelesai({ onNext }) {
+function ScreenSelesai({ onNext, scenario }) {
   const goIsiProfil = () => {
     window.location.href = '/getting-started-profil';
   };
+  const step2Text = scenario === 'lama' ? '3 kandidat dinilai' : 'Siap dibagikan';
 
   // Lingkaran progres: r=56, keliling = 2*pi*56 ≈ 351.9. 65% terisi -> dashoffset = 351.9*(1-0.65)
   const RING_CIRCUMFERENCE = 351.9;
@@ -415,7 +879,7 @@ function ScreenSelesai({ onNext }) {
 
         <div className="gsl-missing-list">
           <div className="gsl-missing-item"><div className="gsl-missing-dot done"><IconCheck /></div><div className="gsl-missing-t done">Lowongan dibuat &amp; aktif</div></div>
-          <div className="gsl-missing-item"><div className="gsl-missing-dot done"><IconCheck /></div><div className="gsl-missing-t done">Siap dibagikan</div></div>
+          <div className="gsl-missing-item"><div className="gsl-missing-dot done"><IconCheck /></div><div className="gsl-missing-t done">{step2Text}</div></div>
           <div className="gsl-missing-item"><div className="gsl-missing-dot" /><div className="gsl-missing-t">Logo &amp; deskripsi perusahaan</div></div>
           <div className="gsl-missing-item"><div className="gsl-missing-dot" /><div className="gsl-missing-t">Industri, ukuran &amp; lokasi</div></div>
         </div>

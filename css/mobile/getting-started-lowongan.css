@@ -325,10 +325,49 @@
   align-items: center;
   justify-content: space-between;
 }
-.gsl-input { transition: border-color 0.18s ease; }
+.gsl-input { transition: border-color 0.18s ease; font-family: inherit; outline: none; width: 100%; text-align: left; }
+button.gsl-input { cursor: pointer; }
 .gsl-input.focus { border-color: var(--luna-orange-400); }
 .gsl-input .ph { color: var(--luna-ink-300); }
-.gsl-input svg { width: 15px; height: 15px; color: var(--luna-ink-400); }
+.gsl-input svg { width: 15px; height: 15px; color: var(--luna-ink-400); flex-shrink: 0; }
+
+/* ── Form Sendiri (mirror MobileBuatLowonganForm) ── */
+.gsl-upload-box {
+  display: flex; align-items: center; gap: 11px; border: 1.5px dashed var(--luna-orange-200); background: var(--luna-orange-050);
+  border-radius: 14px; padding: 12px 13px;
+}
+.gsl-upload-ic { width: 36px; height: 36px; border-radius: 10px; background: #ffffff; border: 1px solid var(--luna-orange-200); color: var(--luna-orange-600); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.gsl-upload-ic svg { width: 17px; height: 17px; }
+.gsl-upload-t { font-size: 12.5px; font-weight: 700; color: var(--luna-ink-900); }
+.gsl-upload-d { font-size: 10.5px; color: var(--luna-ink-500); margin-top: 1px; }
+.gsl-upload-cta { margin-left: auto; font-size: 11.5px; font-weight: 700; color: var(--luna-orange-600); flex-shrink: 0; }
+.gsl-or-divider { display: flex; align-items: center; gap: 10px; color: var(--luna-ink-300); font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+.gsl-or-divider::before, .gsl-or-divider::after { content: ""; flex: 1; height: 1px; background: var(--luna-ink-100); }
+.gsl-char-hint { display: flex; justify-content: space-between; font-size: 10.5px; color: var(--luna-ink-400); }
+.gsl-char-hint b { color: var(--luna-ink-700); font-weight: 700; }
+.gsl-txa {
+  width: 100%; border: 1.5px solid var(--luna-ink-200); border-radius: 14px; padding: 12px 14px; font-size: 13.5px;
+  color: var(--luna-ink-900); background: #ffffff; font-family: inherit; outline: none; resize: none; height: 90px; line-height: 1.55;
+  transition: border-color 0.18s ease;
+}
+.gsl-txa:focus { border-color: var(--luna-orange-400); }
+.gsl-txa::placeholder { color: var(--luna-ink-300); }
+
+/* ── Draft & Review (mirror kartu review real) ── */
+.gsl-draft-card { border: 1px solid var(--luna-ink-100); border-radius: 16px; padding: 16px; background: #ffffff; }
+.gsl-draft-job { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 16px; font-weight: 800; color: var(--luna-ink-900); }
+.gsl-draft-badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 9px; }
+.gsl-draft-badge { font-size: 10.5px; font-weight: 600; color: var(--luna-ink-600); background: var(--luna-ink-050); border: 1px solid var(--luna-ink-100); padding: 4px 9px; border-radius: 20px; }
+.gsl-draft-divider { height: 1px; background: var(--luna-ink-100); margin: 12px 0; }
+.gsl-draft-row { display: flex; justify-content: space-between; font-size: 12px; padding: 6px 0; }
+.gsl-draft-row span:first-child { color: var(--luna-ink-400); }
+.gsl-draft-row span:last-child { color: var(--luna-ink-800); font-weight: 600; }
+.gsl-draft-desc-label { font-size: 11px; font-weight: 700; color: var(--luna-ink-400); text-transform: uppercase; letter-spacing: 0.04em; margin: 12px 0 6px; }
+.gsl-draft-desc { font-size: 12px; line-height: 1.55; color: var(--luna-ink-600); }
+.gsl-ai-hint { display: flex; gap: 10px; align-items: flex-start; background: var(--luna-orange-050); border: 1px solid var(--luna-orange-100); border-radius: 12px; padding: 12px 13px; }
+.gsl-ai-hint svg { width: 16px; height: 16px; color: var(--luna-orange-600); flex-shrink: 0; margin-top: 1px; }
+.gsl-ai-hint p { font-size: 11px; line-height: 1.5; color: var(--luna-ink-600); margin: 0; }
+.gsl-ai-hint p b { color: var(--luna-ink-900); font-weight: 700; }
 .gsl-chip-grid { display: flex; flex-wrap: wrap; gap: 8px; }
 .gsl-chip {
   border: 1.5px solid var(--luna-ink-200);
@@ -453,4 +492,87 @@
 @media (prefers-reduced-motion: reduce) {
   .gsl-top, .gsl-rail, .gsl-body > *, .gsl-footer > * { animation: none; }
 }
+
+/* ── Cabang "Rekrutmen Sedang Berjalan" (ATS) ── */
+.gsl-proof { border: 1px solid var(--luna-ink-100); border-radius: 16px; padding: 14px; background: #f9fafc; display: flex; flex-direction: column; gap: 10px; }
+.gsl-proof-row { display: flex; align-items: center; gap: 10px; }
+.gsl-proof-avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--luna-orange-050); color: var(--luna-orange-600); font-size: 10.5px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.gsl-proof-name { font-size: 12px; font-weight: 700; color: var(--luna-ink-900); flex: 1; }
+.gsl-proof-score { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 13px; font-weight: 800; color: #1f8a4e; }
+
+.gsl-dropzone { border: 1.5px dashed var(--luna-ink-200); border-radius: 16px; padding: 26px 16px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; background: #f9fafc; }
+.gsl-dropzone-ic { width: 40px; height: 40px; border-radius: 12px; background: #ffffff; border: 1px solid var(--luna-ink-100); color: var(--luna-ink-400); display: flex; align-items: center; justify-content: center; }
+.gsl-dropzone-ic svg { width: 19px; height: 19px; }
+.gsl-dropzone-t { font-size: 13px; font-weight: 700; color: var(--luna-ink-900); }
+.gsl-dropzone-d { font-size: 11px; color: var(--luna-ink-500); }
+.gsl-meta-row { display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 10.5px; color: var(--luna-ink-400); }
+.gsl-meta-dot { width: 3px; height: 3px; border-radius: 50%; background: var(--luna-ink-300); }
+
+.gsl-loading-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 18px; padding: 20px 18px 24px; }
+.gsl-loading-badge { width: 64px; height: 64px; border-radius: 50%; background: var(--luna-orange-050); border: 1px solid var(--luna-orange-100); display: flex; align-items: center; justify-content: center; color: var(--luna-orange-500); position: relative; }
+.gsl-loading-badge svg { width: 26px; height: 26px; position: relative; z-index: 1; }
+.gsl-loading-badge::before { content: ""; position: absolute; inset: -6px; border-radius: 50%; border: 2.5px solid var(--luna-orange-100); border-top-color: var(--luna-orange-500); animation: gsl-loading-spin 0.9s linear infinite; }
+@keyframes gsl-loading-spin { to { transform: rotate(360deg); } }
+.gsl-proc-steps { width: 100%; display: flex; flex-direction: column; text-align: left; border: 1px solid var(--luna-ink-100); border-radius: 16px; padding: 4px 14px; background: #ffffff; }
+.gsl-proc-step { display: flex; align-items: center; gap: 11px; padding: 11px 0; border-bottom: 1px solid var(--luna-ink-100); }
+.gsl-proc-step:last-child { border-bottom: none; }
+.gsl-proc-dot { width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+.gsl-proc-dot.done { background: #1f8a4e; color: #fff; }
+.gsl-proc-dot.done svg { width: 11px; height: 11px; }
+.gsl-proc-dot.active { border: 2px solid var(--luna-orange-500); position: relative; }
+.gsl-proc-dot.active::after { content: ""; position: absolute; inset: -4px; border-radius: 50%; border: 2px solid var(--luna-orange-100); border-top-color: var(--luna-orange-500); animation: gsl-loading-spin 0.9s linear infinite; }
+.gsl-proc-dot.pending { border: 2px solid var(--luna-ink-200); }
+.gsl-proc-t { font-size: 12.5px; font-weight: 600; color: var(--luna-ink-400); }
+.gsl-proc-t.done { color: var(--luna-ink-800); }
+.gsl-proc-t.active { color: var(--luna-ink-900); font-weight: 700; }
+.gsl-proc-note { font-size: 11px; color: var(--luna-ink-400); }
+
+.gsl-cv-row { display: flex; align-items: center; gap: 10px; border: 1px solid var(--luna-ink-100); border-radius: 12px; padding: 9px 11px; background: #ffffff; }
+.gsl-cv-ic { width: 26px; height: 26px; border-radius: 7px; background: #FBEEDC; color: #B5790A; font-size: 8.5px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.gsl-cv-name { font-size: 11.5px; font-weight: 600; color: var(--luna-ink-900); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.gsl-up-top { display: flex; align-items: center; justify-content: space-between; }
+.gsl-up-status { font-size: 13px; font-weight: 700; color: var(--luna-ink-900); display: flex; flex-direction: column; gap: 2px; }
+.gsl-up-status .muted { font-size: 10.5px; font-weight: 600; color: var(--luna-ink-400); }
+.gsl-up-count { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 15px; font-weight: 800; color: var(--luna-orange-500); }
+.gsl-progress-track { height: 4px; border-radius: 3px; background: var(--luna-ink-100); overflow: hidden; }
+.gsl-progress-fill { height: 100%; background: var(--luna-orange-500); border-radius: 3px; }
+.gsl-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.gsl-up-section-label { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--luna-ink-400); margin: 4px 0 2px; }
+.gsl-up-row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--luna-ink-050); }
+.gsl-up-row:last-child { border-bottom: none; }
+.gsl-up-row-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.gsl-file-progress-track { width: 44px; height: 4px; border-radius: 3px; background: var(--luna-ink-100); overflow: hidden; }
+.gsl-file-progress-fill { height: 100%; background: var(--luna-orange-500); }
+.gsl-status-label { display: flex; align-items: center; gap: 4px; font-size: 10.5px; font-weight: 700; }
+.gsl-status-label svg { width: 12px; height: 12px; }
+.gsl-status-label.uploading { color: var(--luna-orange-600); }
+.gsl-status-label.uploading svg { animation: gsl-loading-spin 0.8s linear infinite; }
+.gsl-status-label.berhasil { color: #1f8a4e; }
+.gsl-status-label.menunggu { color: var(--luna-ink-300); }
+.gsl-detail-badge { font-size: 10px; font-weight: 700; color: var(--luna-ink-500); background: var(--luna-ink-050); padding: 3px 8px; border-radius: 20px; }
+
+.gsl-gagal-section { border-top: 1px solid var(--luna-ink-100); margin-top: 6px; padding-top: 10px; }
+.gsl-gagal-title { display: flex; align-items: center; gap: 7px; font-size: 11.5px; font-weight: 700; color: #C9342B; margin-bottom: 8px; }
+.gsl-gagal-title svg { width: 14px; height: 14px; }
+.gsl-gagal-item { border: 1px solid #F3D9D6; background: #FCF3F2; border-radius: 12px; padding: 9px 11px; }
+.gsl-gagal-row { display: flex; align-items: center; gap: 8px; }
+.gsl-gagal-name { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.gsl-gagal-file { font-size: 11.5px; font-weight: 600; color: var(--luna-ink-900); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gsl-gagal-chip { font-size: 9.5px; font-weight: 700; color: #C9342B; background: #F8E3E1; padding: 2px 7px; border-radius: 20px; width: fit-content; }
+.gsl-retry-btn { width: 26px; height: 26px; border-radius: 8px; background: #fff; border: 1px solid #F3D9D6; color: #C9342B; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.gsl-retry-btn svg { width: 13px; height: 13px; }
+
+.gsl-success-ring {
+  width: 56px; height: 56px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--luna-orange-400), var(--luna-orange-500));
+  color: #fff; display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 12px 24px -8px rgba(255, 123, 0, 0.5); flex-shrink: 0;
+}
+.gsl-success-ring svg { width: 24px; height: 24px; }
+.gsl-score-card { border: 1px solid var(--luna-ink-100); border-radius: 14px; padding: 13px; background: #ffffff; display: flex; align-items: center; gap: 11px; }
+.gsl-score-avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--luna-orange-050); color: var(--luna-orange-600); font-size: 12px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.gsl-score-name { font-size: 12.5px; font-weight: 700; color: var(--luna-ink-900); }
+.gsl-score-role { font-size: 10.5px; color: var(--luna-ink-400); }
+.gsl-score-val { margin-left: auto; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 15px; font-weight: 800; color: #1f8a4e; flex-shrink: 0; }
 

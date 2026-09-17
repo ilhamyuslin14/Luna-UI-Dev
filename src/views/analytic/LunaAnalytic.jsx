@@ -25,6 +25,154 @@ export default function LunaAnalytic({ navigate }) {
   const [loadingCandidates, setLoadingCandidates] = useState(false);
   const [candidateFilter, setCandidateFilter] = useState('real'); // 'real', 'all', 'contoh'
 
+  // Advanced Query Builder Filter States (GA4 / SQL style)
+  const [showAdvancedFilter, setShowAdvancedFilter] = useState(false);
+  const [filterConjunction, setFilterConjunction] = useState('AND'); // 'AND' | 'OR'
+  const [customRules, setCustomRules] = useState([]);
+  const [applyToCharts, setApplyToCharts] = useState(true);
+
+  // Available Dimensions / Columns for Advanced Query Filter
+  const FILTER_COLUMNS = [
+    { key: 'nama_pengguna', label: 'Nama Pengguna', type: 'text' },
+    { key: 'nama_perusahaan', label: 'Nama Perusahaan', type: 'text' },
+    { key: 'email', label: 'Email', type: 'text' },
+    { key: 'no_kontak', label: 'Nomor WhatsApp / HP', type: 'text' },
+    { key: 'kota', label: 'Domisili / Kota', type: 'text' },
+    { key: 'industri', label: 'Sektor Industri', type: 'text' },
+    { key: 'jabatan', label: 'Jabatan Recruiter', type: 'text' },
+    { key: 'channel_akuisisi', label: 'Channel Akuisisi (UTM)', type: 'text' },
+    { key: 'kategori_perangkat', label: 'Kategori Perangkat', type: 'text' },
+    { key: 'sistem_operasi', label: 'Sistem Operasi', type: 'text' },
+    { key: 'segmen_retensi', label: 'Status Retensi', type: 'text' },
+    { key: 'total_lowongan_asli', label: 'Total Lowongan Asli', type: 'number' },
+    { key: 'lowongan_terbit_asli', label: 'Lowongan Terbit Asli', type: 'number' },
+    { key: 'total_kandidat', label: 'Total Kandidat Riil', type: 'number' },
+    { key: 'hari_aktif', label: 'Hari Aktif (Buka Apps)', type: 'number' },
+    { key: 'umur_akun_hari', label: 'Umur Akun (Hari)', type: 'number' }
+  ];
+
+  const TEXT_OPERATORS = [
+    { key: 'contains', label: 'Berisi (Contains)' },
+    { key: 'not_contains', label: 'Tidak Berisi (Does not contain)' },
+    { key: 'equals', label: 'Sama Persis (Exact match)' },
+    { key: 'not_equals', label: 'Tidak Sama Dengan (!=)' },
+    { key: 'starts_with', label: 'Diawali Dengan (Starts with)' },
+    { key: 'ends_with', label: 'Diakhiri Dengan (Ends with)' },
+    { key: 'is_empty', label: 'Kosong / Belum Diisi (Is empty)' },
+    { key: 'is_not_empty', label: 'Ada Isinya (Is not empty)' }
+  ];
+
+  const NUMBER_OPERATORS = [
+    { key: 'equals', label: '= Sama Dengan' },
+    { key: 'not_equals', label: '!= Tidak Sama Dengan' },
+    { key: 'greater_than', label: '> Lebih Dari' },
+    { key: 'greater_or_equal', label: '>= Lebih Dari Sama Dengan' },
+    { key: 'less_than', label: '< Kurang Dari' },
+    { key: 'less_or_equal', label: '<= Kurang Dari Sama Dengan' },
+    { key: 'is_zero', label: '= 0 (Nol / Belum Ada)' },
+    { key: 'is_not_zero', label: '> 0 (Ada Data)' }
+  ];
+
+  // Helper to evaluate a single rule on an item
+  const evaluateCustomRule = (item, rule) => {
+    const colDef = FILTER_COLUMNS.find((c) => c.key === rule.column) || { type: 'text' };
+    const rawVal = item[rule.column];
+
+    if (colDef.type === 'number') {
+      const numVal = Number(rawVal) || 0;
+      const targetNum = Number(rule.value) || 0;
+
+      switch (rule.operator) {
+        case 'equals': return numVal === targetNum;
+        case 'not_equals': return numVal !== targetNum;
+        case 'greater_than': return numVal > targetNum;
+        case 'greater_or_equal': return numVal >= targetNum;
+        case 'less_than': return numVal < targetNum;
+        case 'less_or_equal': return numVal <= targetNum;
+        case 'is_zero': return numVal === 0;
+        case 'is_not_zero': return numVal > 0;
+        default: return true;
+      }
+    } else {
+      // String / Text evaluation
+      const strVal = (rawVal || '').toString().trim().toLowerCase();
+      const targetStr = (rule.value || '').toString().trim().toLowerCase();
+      const isEmpty = !rawVal || strVal === '' || strVal === '-' || strVal === 'belum ditentukan';
+
+      switch (rule.operator) {
+        case 'contains':
+          return !targetStr ? true : strVal.includes(targetStr);
+        case 'not_contains':
+          return !targetStr ? true : !strVal.includes(targetStr);
+        case 'equals':
+          return strVal === targetStr;
+        case 'not_equals':
+          return strVal !== targetStr;
+        case 'starts_with':
+          return strVal.startsWith(targetStr);
+        case 'ends_with':
+          return strVal.endsWith(targetStr);
+        case 'is_empty':
+          return isEmpty;
+        case 'is_not_empty':
+          return !isEmpty;
+        default:
+          return true;
+      }
+    }
+  };
+
+  // Helper to evaluate all active custom rules
+  const matchesCustomFilter = (item) => {
+    if (!customRules || customRules.length === 0) return true;
+
+    if (filterConjunction === 'AND') {
+      return customRules.every((rule) => evaluateCustomRule(item, rule));
+    } else {
+      // OR conjunction
+      return customRules.some((rule) => evaluateCustomRule(item, rule));
+    }
+  };
+
+  // Add a new empty rule
+  const handleAddRule = () => {
+    const newRule = {
+      id: Date.now().toString(),
+      column: 'nama_perusahaan',
+      operator: 'contains',
+      value: ''
+    };
+    setCustomRules([...customRules, newRule]);
+    setShowAdvancedFilter(true);
+  };
+
+  // Update a specific rule
+  const handleUpdateRule = (ruleId, field, value) => {
+    setCustomRules((prev) =>
+      prev.map((r) => {
+        if (r.id !== ruleId) return r;
+        const updated = { ...r, [field]: value };
+        // If column changed, reset operator and value appropriately
+        if (field === 'column') {
+          const colDef = FILTER_COLUMNS.find((c) => c.key === value);
+          updated.operator = colDef?.type === 'number' ? 'greater_than' : 'contains';
+          updated.value = '';
+        }
+        return updated;
+      })
+    );
+  };
+
+  // Remove a specific rule
+  const handleRemoveRule = (ruleId) => {
+    setCustomRules((prev) => prev.filter((r) => r.id !== ruleId));
+  };
+
+  // Clear all rules
+  const handleResetRules = () => {
+    setCustomRules([]);
+  };
+
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -143,7 +291,7 @@ export default function LunaAnalytic({ navigate }) {
       setEndDate(todayStr);
     } else if (preset === 'this_week') {
       const day = today.getDay(); // 0 is Sunday
-      const diff = today.getDate() - day + (day === 0 ? -6 : 1); // Monday
+      const diff = today.getDate() - day + (day === 0 ? -6 : 1);
       const monday = new Date(today.setDate(diff));
       setStartDate(formatDate(monday));
       setEndDate(formatDate(new Date()));
@@ -154,7 +302,7 @@ export default function LunaAnalytic({ navigate }) {
     }
   };
 
-  // Filtered and Sorted dataset
+  // Filtered and Sorted dataset (for Table)
   const processedData = useMemo(() => {
     // 1. Filter
     const filtered = data.filter((item) => {
@@ -182,7 +330,10 @@ export default function LunaAnalytic({ navigate }) {
         if (endDate && itemDateStr > endDate) matchDate = false;
       }
 
-      return matchSearch && matchChannel && matchDevice && matchRetention && matchDate;
+      // Advanced Custom Query Filter Match
+      const matchCustom = matchesCustomFilter(item);
+
+      return matchSearch && matchChannel && matchDevice && matchRetention && matchDate && matchCustom;
     });
 
     // 2. Sort
@@ -212,18 +363,31 @@ export default function LunaAnalytic({ navigate }) {
       if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
       return 0;
     });
-  }, [data, search, selectedChannel, selectedDevice, selectedRetention, startDate, endDate, sortColumn, sortDirection]);
+  }, [data, search, selectedChannel, selectedDevice, selectedRetention, startDate, endDate, sortColumn, sortDirection, customRules, filterConjunction]);
 
-  // Dataset filtered by Date Range for Top Metrics & Charts
-  const dateFilteredData = useMemo(() => {
+  // Dataset filtered strictly by Date Range (Periode Pendaftaran) - Basis angka total recruiter periode
+  const periodData = useMemo(() => {
     return data.filter((item) => {
-      if (!item.tanggal_daftar) return true;
-      const itemDateStr = item.tanggal_daftar.split('T')[0];
-      if (startDate && itemDateStr < startDate) return false;
-      if (endDate && itemDateStr > endDate) return false;
+      if (item.tanggal_daftar) {
+        const itemDateStr = item.tanggal_daftar.split('T')[0];
+        if (startDate && itemDateStr < startDate) return false;
+        if (endDate && itemDateStr > endDate) return false;
+      }
       return true;
     });
   }, [data, startDate, endDate]);
+
+  const periodTotalRecruiters = periodData.length;
+
+  // Dataset filtered by Date Range (and optionally Advanced Query Filter) for Top Metrics & Charts
+  const dateFilteredData = useMemo(() => {
+    return periodData.filter((item) => {
+      if (applyToCharts) {
+        return matchesCustomFilter(item);
+      }
+      return true;
+    });
+  }, [periodData, customRules, filterConjunction, applyToCharts]);
 
   // Aggregate Top Metrics (Reflects selected Date Range)
   const metrics = useMemo(() => {
@@ -809,6 +973,194 @@ export default function LunaAnalytic({ navigate }) {
             <option value="At Risk">At Risk (8-30 hari)</option>
             <option value="Dormant">Dormant (&gt; 30 hari)</option>
           </select>
+
+          {/* Toggle Button for GA4-Style Advanced Query Filter */}
+          <button
+            type="button"
+            className={`luna-query-filter-toggle-btn ${customRules.length > 0 || showAdvancedFilter ? 'active' : ''}`}
+            onClick={() => setShowAdvancedFilter(!showAdvancedFilter)}
+            title="Buka / Tutup Filter Query Lanjutan (Logika AND / OR)"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+            </svg>
+            Query Filter {customRules.length > 0 && <span className="luna-query-badge-count">{customRules.length}</span>}
+          </button>
+        </div>
+      </div>
+
+      {/* Advanced Query Builder Filter Panel (GA4 / SQL Style) */}
+      {showAdvancedFilter && (
+        <div className="luna-query-builder-panel">
+          <div className="luna-query-builder-header">
+            <div className="luna-query-builder-title-group">
+              <span className="luna-query-builder-icon">🔍</span>
+              <div>
+                <div className="luna-query-builder-title">Filter Query Lanjutan (GA4 Style)</div>
+                <div className="luna-query-builder-desc">
+                  Susun aturan logika pencarian multi-kondisi dengan operator teks, perbandingan angka, dan logika AND / OR.
+                </div>
+              </div>
+            </div>
+
+            <div className="luna-query-builder-actions">
+              {/* Conjunction Selector (AND / OR) */}
+              <div className="luna-query-conjunction-wrap">
+                <span className="luna-query-conjunction-label">Kondisi:</span>
+                <select
+                  className="luna-query-conjunction-select"
+                  value={filterConjunction}
+                  onChange={(e) => setFilterConjunction(e.target.value)}
+                >
+                  <option value="AND">AND (Semua aturan harus cocok)</option>
+                  <option value="OR">OR (Salah satu aturan cocok)</option>
+                </select>
+              </div>
+
+              {/* Checkbox Apply to Charts */}
+              <label className="luna-query-chart-sync-label" title="Jika dicentang, angka pada kartu metrik dan grafik di atas akan ikut tersaring">
+                <input
+                  type="checkbox"
+                  checked={applyToCharts}
+                  onChange={(e) => setApplyToCharts(e.target.checked)}
+                />
+                <span>Terapkan juga ke Grafik & Metrik</span>
+              </label>
+
+              {customRules.length > 0 && (
+                <button
+                  type="button"
+                  className="luna-query-btn-reset"
+                  onClick={handleResetRules}
+                  title="Hapus semua aturan filter kustom"
+                >
+                  ✕ Reset Filter
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* List of Filter Rules */}
+          <div className="luna-query-rules-list">
+            {customRules.length === 0 ? (
+              <div className="luna-query-rules-empty">
+                Belum ada aturan filter aktif. Klik tombol <strong>"+ Tambah Aturan Filter"</strong> di bawah untuk mulai memfilter data berdasarkan nama, perusahaan, kota, kuota lowongan, hari aktif, dll.
+              </div>
+            ) : (
+              customRules.map((rule, idx) => {
+                const colDef = FILTER_COLUMNS.find((c) => c.key === rule.column) || { type: 'text' };
+                const isNumeric = colDef.type === 'number';
+                const operators = isNumeric ? NUMBER_OPERATORS : TEXT_OPERATORS;
+                const noInputRequired = ['is_empty', 'is_not_empty', 'is_zero', 'is_not_zero'].includes(rule.operator);
+
+                return (
+                  <div key={rule.id} className="luna-query-rule-row">
+                    <span className="luna-query-rule-index">
+                      {idx === 0 ? 'Where' : filterConjunction}
+                    </span>
+
+                    {/* Column Select */}
+                    <select
+                      className="luna-query-select luna-query-col-select"
+                      value={rule.column}
+                      onChange={(e) => handleUpdateRule(rule.id, 'column', e.target.value)}
+                    >
+                      {FILTER_COLUMNS.map((col) => (
+                        <option key={col.key} value={col.key}>
+                          {col.label} {col.type === 'number' ? '(Angka)' : ''}
+                        </option>
+                      ))}
+                    </select>
+
+                    {/* Operator Select */}
+                    <select
+                      className="luna-query-select luna-query-op-select"
+                      value={rule.operator}
+                      onChange={(e) => handleUpdateRule(rule.id, 'operator', e.target.value)}
+                    >
+                      {operators.map((op) => (
+                        <option key={op.key} value={op.key}>
+                          {op.label}
+                        </option>
+                      ))}
+                    </select>
+
+                    {/* Value Input (Hidden if operator doesn't need value) */}
+                    {!noInputRequired ? (
+                      <input
+                        type={isNumeric ? 'number' : 'text'}
+                        className="luna-query-input"
+                        placeholder={isNumeric ? 'Nilai angka...' : 'Ketik nilai pencarian...'}
+                        value={rule.value}
+                        onChange={(e) => handleUpdateRule(rule.id, 'value', e.target.value)}
+                      />
+                    ) : (
+                      <div className="luna-query-no-input-placeholder">
+                        (Tidak memerlukan input teks/angka tambahan)
+                      </div>
+                    )}
+
+                    {/* Remove Rule Button */}
+                    <button
+                      type="button"
+                      className="luna-query-btn-delete"
+                      onClick={() => handleRemoveRule(rule.id)}
+                      title="Hapus aturan ini"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          {/* Footer of Query Builder: Add Rule & Summary */}
+          <div className="luna-query-builder-footer">
+            <button
+              type="button"
+              className="luna-query-btn-add"
+              onClick={handleAddRule}
+            >
+              + Tambah Aturan Filter
+            </button>
+
+            <div className="luna-query-result-count">
+              {customRules.length > 0 ? (
+                <>
+                  Menampilkan <strong>{processedData.length}</strong> dari <strong>{periodTotalRecruiters}</strong> recruiter periode ini{' '}
+                  <span className="luna-query-result-pct">
+                    ({periodTotalRecruiters > 0 ? ((processedData.length / periodTotalRecruiters) * 100).toFixed(1) : 0}%)
+                  </span>
+                </>
+              ) : (
+                <>
+                  Menampilkan <strong>{processedData.length}</strong> dari <strong>{periodTotalRecruiters}</strong> recruiter
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Table Summary Count Bar (Visible when Query Builder is closed or active) */}
+      <div className="luna-analytic-table-info-bar">
+        <div className="luna-analytic-table-info-text">
+          {customRules.length > 0 ? (
+            <>
+              Menampilkan <strong>{processedData.length}</strong> dari <strong>{periodTotalRecruiters}</strong> recruiter{' '}
+              <span className="luna-query-result-pct">
+                ({periodTotalRecruiters > 0 ? ((processedData.length / periodTotalRecruiters) * 100).toFixed(1) : 0}%)
+              </span>
+              <span className="luna-analytic-filter-active-tag">
+                ⚡ Query Aktif ({customRules.length} aturan)
+              </span>
+            </>
+          ) : (
+            <>
+              Menampilkan <strong>{processedData.length}</strong> dari <strong>{periodTotalRecruiters}</strong> recruiter
+            </>
+          )}
         </div>
       </div>
 
